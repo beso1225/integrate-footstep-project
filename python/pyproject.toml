@@ -1,0 +1,15 @@
+[project]
+name = "integrate-footstep-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "joblib>=1.5.3",
+    "lap>=0.5.13",
+    "opencv-python>=5.0.0.93",
+    "pandas>=3.0.3",
+    "python-osc>=1.10.2",
+    "scikit-learn>=1.9.0",
+    "ultralytics>=8.4.89",
+]
