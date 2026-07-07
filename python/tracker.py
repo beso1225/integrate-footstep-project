@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 
 import cv2
@@ -19,8 +20,95 @@ model = YOLO(model_path)
 client = udp_client.SimpleUDPClient("localhost", 12000)
 print("データ送信先を設定しました -> localhost:12000")
 
+ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION") == "1"
+INDOOR_EMOTION_MODEL_PATH = Path(__file__).resolve().parent / "2egait_lstm_model.h5"
+INDOOR_EMOTIONS = ["angry", "happy", "neutral", "sad"]
+MAX_EMOTION_FRAMES = 150
+
+emotion_model = None
+pose = None
+pad_sequences = None
+sequence_buffers = {}
+current_emotions = {}
+
+
+def setup_indoor_emotion():
+    global emotion_model, pose, pad_sequences
+
+    if not ENABLE_INDOOR_EMOTION:
+        return False
+
+    try:
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+        import tensorflow as tf
+        from tensorflow.keras.preprocessing.sequence import pad_sequences as keras_pad_sequences
+        from mediapipe import solutions as mp_solutions
+
+        emotion_model = tf.keras.models.load_model(INDOOR_EMOTION_MODEL_PATH)
+        pose = mp_solutions.pose.Pose(
+            min_detection_confidence=0.5, min_tracking_confidence=0.5
+        )
+        pad_sequences = keras_pad_sequences
+        print(f"屋内感情モデルをロードしました: {INDOOR_EMOTION_MODEL_PATH}")
+        return True
+    except Exception as error:
+        print(f"【警告】屋内感情推定を無効化します: {error}")
+        return False
+
+
+def extract_egait_features(landmarks):
+    mp_indices = [24, 23, 0, 0, 11, 13, 15, 12, 14, 16, 23, 25, 27, 24, 26, 28]
+    features = []
+    for index in mp_indices:
+        landmark = landmarks.landmark[index]
+        features.extend([landmark.x, landmark.y, landmark.z])
+    return np.array(features)
+
+
+def predict_indoor_emotion(frame, box_bounds, track_id):
+    if emotion_model is None or pose is None or pad_sequences is None:
+        return "happy"
+
+    x_min, y_min, x_max, y_max = box_bounds
+    pad = 30
+    height, width, _ = frame.shape
+    y1, y2 = max(0, y_min - pad), min(height, y_max + pad)
+    x1, x2 = max(0, x_min - pad), min(width, x_max + pad)
+    crop_img = frame[y1:y2, x1:x2]
+
+    if crop_img.shape[0] == 0 or crop_img.shape[1] == 0:
+        return current_emotions.get(track_id, "happy")
+
+    crop_rgb = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
+    pose_results = pose.process(crop_rgb)
+
+    if not pose_results.pose_world_landmarks:
+        return current_emotions.get(track_id, "happy")
+
+    features = extract_egait_features(pose_results.pose_world_landmarks)
+    sequence_buffers.setdefault(track_id, []).append(features)
+    if len(sequence_buffers[track_id]) > MAX_EMOTION_FRAMES:
+        sequence_buffers[track_id].pop(0)
+
+    if len(sequence_buffers[track_id]) > 30:
+        input_data = pad_sequences(
+            [sequence_buffers[track_id]],
+            maxlen=MAX_EMOTION_FRAMES,
+            dtype="float32",
+            padding="post",
+            truncating="post",
+        )
+        prediction = emotion_model.predict(input_data, verbose=0)
+        emotion_index = int(np.argmax(prediction[0]))
+        current_emotions[track_id] = INDOOR_EMOTIONS[emotion_index]
+
+    return current_emotions.get(track_id, "happy")
+
+
+indoor_emotion_enabled = setup_indoor_emotion()
+
 print("2. カメラを開きます...")
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 if not cap.isOpened():
     print("【エラー】カメラを開けませんでした。")
@@ -67,6 +155,7 @@ while cap.isOpened():
 
         track_id = int(box.id[0])
         x_min, y_min, x_max, y_max = map(int, box.xyxy[0])
+        box_bounds = (x_min, y_min, x_max, y_max)
 
         # 元の「おへその真下」の綺麗な中心座標
         foot_x = (x_min + x_max) // 2
@@ -82,7 +171,11 @@ while cap.isOpened():
             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
             cv2.circle(frame, (foot_x, foot_y), 6, (0, 0, 255), -1)
 
+            emotion = predict_indoor_emotion(frame, box_bounds, track_id)
+
             text = f"ID:{track_id} X={int(real_x)}, Y={int(real_y)}"
+            if indoor_emotion_enabled:
+                text = f"{text} {emotion}"
             cv2.putText(
                 frame,
                 text,
@@ -93,10 +186,10 @@ while cap.isOpened():
                 2,
             )
 
-            # 送信データを元に戻す：[ID, X, Y] の3つのみ送信
-            client.send_message(
-                "/footstep", [float(track_id), float(real_x), float(real_y)]
-            )
+            footstep_payload = [float(track_id), float(real_x), float(real_y)]
+            if indoor_emotion_enabled:
+                footstep_payload.append(emotion)
+            client.send_message("/footstep", footstep_payload)
 
     cv2.imshow(window_name, frame)
 

@@ -28,6 +28,7 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertIn('msg.checkAddrPattern("/footstep")', self.sketch)
         self.assertIn('msg.checkAddrPattern("/walking/prediction")', self.sketch)
         self.assertIn('msg.checkAddrPattern("/walking/peak_g")', self.sketch)
+        self.assertIn("indoorEmotionFromMessage(msg)", self.sketch)
 
     def test_physical_dimensions_are_explicit(self):
         self.assertGreater(self.constant("PIXELS_PER_METER"), 0.0)
@@ -81,11 +82,21 @@ class ProcessingContractTest(unittest.TestCase):
         click_maximum = self.constant("CLICK_MAX_TURN_DEGREES")
         runtime_maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")
         self.assertGreater(click_maximum, 0.0)
+        self.assertLessEqual(click_maximum, 8.0)
         self.assertLessEqual(click_maximum, runtime_maximum)
         self.assertIn(
             "float magnitude = random(0, CLICK_MAX_TURN_DEGREES);",
             self.sketch,
         )
+
+    def test_indoor_emotion_payload_is_optional_and_normalized(self):
+        self.assertIn("String indoorEmotionFromMessage(OscMessage msg)", self.sketch)
+        self.assertIn('msg.arguments().length >= 4', self.sketch)
+        self.assertIn('return normalizeEmotion(msg.get(3).stringValue());', self.sketch)
+        self.assertIn('return "happy";', self.sketch)
+        self.assertIn("normalizeEmotion(String emotion)", self.sketch)
+        self.assertIn("emotion.toLowerCase()", self.sketch)
+        self.assertIn('if (normalizedEmotion.equals("angry")) return "sad";', self.sketch)
         self.assertIn("return rightFoot ? magnitude : -magnitude;", self.sketch)
         self.assertIn("randomTurnForFoot(isRightFoot)", self.sketch)
         self.assertNotIn(

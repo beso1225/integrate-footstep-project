@@ -20,7 +20,7 @@ final float OUTDOOR_MAX_STEP_LENGTH_CM = 85.0;
 final float OUTDOOR_DEFAULT_STEP_LENGTH_CM = 70.0;
 final float OUTDOOR_STEP_WIDTH_CM = 5.0;
 final float OUTDOOR_MAX_TURN_DEGREES = 25.0;
-final float CLICK_MAX_TURN_DEGREES = 25.0;
+final float CLICK_MAX_TURN_DEGREES = 8.0;
 
 
 int footWidth;
@@ -181,9 +181,26 @@ void draw() {
 }
 
 Movie getMovieForEmotion(String emotion) {
-  if (emotion.equals("sad")) return sadMovie;
-  if (emotion.equals("neutral")) return neutralMovie;
+  String normalizedEmotion = normalizeEmotion(emotion);
+  if (normalizedEmotion.equals("sad")) return sadMovie;
+  if (normalizedEmotion.equals("neutral")) return neutralMovie;
   return happyMovie; 
+}
+
+String normalizeEmotion(String emotion) {
+  if (emotion == null) return "happy";
+  String normalizedEmotion = emotion.toLowerCase();
+  if (normalizedEmotion.equals("sad")) return "sad";
+  if (normalizedEmotion.equals("angry")) return "sad";
+  if (normalizedEmotion.equals("neutral")) return "neutral";
+  return "happy";
+}
+
+String indoorEmotionFromMessage(OscMessage msg) {
+  if (msg.arguments().length >= 4) {
+    return normalizeEmotion(msg.get(3).stringValue());
+  }
+  return "happy";
 }
 
 void oscEvent(OscMessage msg) {
@@ -194,6 +211,7 @@ void oscEvent(OscMessage msg) {
     int id = (int)msg.get(0).floatValue();
     float realX = msg.get(1).floatValue();
     float realY = msg.get(2).floatValue();
+    String indoorEmotion = indoorEmotionFromMessage(msg);
     
     if (!walkers.containsKey(id)) {
       WalkerState newWalker = new WalkerState(id);
@@ -220,7 +238,7 @@ void oscEvent(OscMessage msg) {
         currentScreen.y,
         footAngle,
         w.isRightFoot,
-        "happy",
+        indoorEmotion,
         lateralOffset
       ));
       
@@ -271,6 +289,7 @@ void stepOutdoor(
   float inputStepLengthMeters,
   float inputHeadingChangeDegrees
 ) {
+  receivedEmotion = normalizeEmotion(receivedEmotion);
   
   // 1. 急旋回で左右の足が交差しないよう、1歩ごとの旋回を制限する
   float maxTurnRadians = radians(OUTDOOR_MAX_TURN_DEGREES);
