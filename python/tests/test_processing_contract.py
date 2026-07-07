@@ -8,7 +8,22 @@ SKETCH_DIR = Path(__file__).resolve().parents[2] / "processing"
 
 class ProcessingContractTest(unittest.TestCase):
     def setUp(self):
-        self.sketch = (SKETCH_DIR / "processing.pde").read_text()
+        self.sketch = "\n".join(
+            path.read_text() for path in sorted(SKETCH_DIR.glob("*.pde"))
+        )
+
+    def test_sketch_is_split_by_responsibility(self):
+        expected_files = {
+            "processing.pde",
+            "Config.pde",
+            "Drawing.pde",
+            "Emotion.pde",
+            "Indoor.pde",
+            "OscHandlers.pde",
+            "Outdoor.pde",
+        }
+        actual_files = {path.name for path in SKETCH_DIR.glob("*.pde")}
+        self.assertTrue(expected_files.issubset(actual_files))
 
     def constant(self, name):
         match = re.search(rf"final float {name} = ([0-9.]+);", self.sketch)
