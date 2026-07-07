@@ -20,36 +20,52 @@ model = YOLO(model_path)
 client = udp_client.SimpleUDPClient("localhost", 12000)
 print("データ送信先を設定しました -> localhost:12000")
 
-ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION") == "1"
+ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION", "1") != "0"
 INDOOR_EMOTION_MODEL_PATH = Path(__file__).resolve().parent / "2egait_lstm_model.h5"
+POSE_LANDMARKER_MODEL_PATH = Path(__file__).resolve().parent / "pose_landmarker_full.task"
 INDOOR_EMOTIONS = ["angry", "happy", "neutral", "sad"]
 MAX_EMOTION_FRAMES = 150
 
 emotion_model = None
 pose = None
 pad_sequences = None
+mediapipe_image_class = None
+mediapipe_image_format = None
 sequence_buffers = {}
 current_emotions = {}
 
 
 def setup_indoor_emotion():
-    global emotion_model, pose, pad_sequences
+    global emotion_model, pose, pad_sequences, mediapipe_image_class, mediapipe_image_format
 
     if not ENABLE_INDOOR_EMOTION:
         return False
 
     try:
         os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+        import mediapipe as mp
         import tensorflow as tf
+        from mediapipe.tasks import python as mp_tasks
+        from mediapipe.tasks.python import vision as mp_vision
         from tensorflow.keras.preprocessing.sequence import pad_sequences as keras_pad_sequences
-        from mediapipe import solutions as mp_solutions
 
         emotion_model = tf.keras.models.load_model(INDOOR_EMOTION_MODEL_PATH)
-        pose = mp_solutions.pose.Pose(
-            min_detection_confidence=0.5, min_tracking_confidence=0.5
+        base_options = mp_tasks.BaseOptions(
+            model_asset_path=str(POSE_LANDMARKER_MODEL_PATH)
         )
+        options = mp_vision.PoseLandmarkerOptions(
+            base_options=base_options,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
+            min_tracking_confidence=0.5,
+            output_segmentation_masks=False,
+        )
+        pose = mp_vision.PoseLandmarker.create_from_options(options)
         pad_sequences = keras_pad_sequences
+        mediapipe_image_class = mp.Image
+        mediapipe_image_format = mp.ImageFormat.SRGB
         print(f"屋内感情モデルをロードしました: {INDOOR_EMOTION_MODEL_PATH}")
+        print(f"姿勢推定モデルをロードしました: {POSE_LANDMARKER_MODEL_PATH}")
         return True
     except Exception as error:
         print(f"【警告】屋内感情推定を無効化します: {error}")
@@ -60,13 +76,19 @@ def extract_egait_features(landmarks):
     mp_indices = [24, 23, 0, 0, 11, 13, 15, 12, 14, 16, 23, 25, 27, 24, 26, 28]
     features = []
     for index in mp_indices:
-        landmark = landmarks.landmark[index]
+        landmark = landmarks[index]
         features.extend([landmark.x, landmark.y, landmark.z])
     return np.array(features)
 
 
 def predict_indoor_emotion(frame, box_bounds, track_id):
-    if emotion_model is None or pose is None or pad_sequences is None:
+    if (
+        emotion_model is None
+        or pose is None
+        or pad_sequences is None
+        or mediapipe_image_class is None
+        or mediapipe_image_format is None
+    ):
         return "happy"
 
     x_min, y_min, x_max, y_max = box_bounds
@@ -80,12 +102,16 @@ def predict_indoor_emotion(frame, box_bounds, track_id):
         return current_emotions.get(track_id, "happy")
 
     crop_rgb = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
-    pose_results = pose.process(crop_rgb)
+    mp_image = mediapipe_image_class(
+        image_format=mediapipe_image_format,
+        data=crop_rgb,
+    )
+    pose_results = pose.detect(mp_image)
 
     if not pose_results.pose_world_landmarks:
         return current_emotions.get(track_id, "happy")
 
-    features = extract_egait_features(pose_results.pose_world_landmarks)
+    features = extract_egait_features(pose_results.pose_world_landmarks[0])
     sequence_buffers.setdefault(track_id, []).append(features)
     if len(sequence_buffers[track_id]) > MAX_EMOTION_FRAMES:
         sequence_buffers[track_id].pop(0)

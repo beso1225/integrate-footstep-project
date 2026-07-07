@@ -1,4 +1,5 @@
 from pathlib import Path
+import tomllib
 import unittest
 
 
@@ -19,14 +20,25 @@ class IntegrationFilesTest(unittest.TestCase):
         self.assertIn('"heading_change"', script)
         self.assertIn('MODEL_PATH = BASE_DIR / "walking_emotion_rf.pkl"', script)
 
-    def test_tracker_keeps_indoor_emotion_optional(self):
+    def test_tracker_enables_indoor_emotion_by_default(self):
         tracker = (PYTHON_DIR / "tracker.py").read_text()
-        self.assertIn('ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION") == "1"', tracker)
+        self.assertIn('ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION", "1") != "0"', tracker)
         self.assertIn('INDOOR_EMOTION_MODEL_PATH = Path(__file__).resolve().parent / "2egait_lstm_model.h5"', tracker)
+        self.assertIn('POSE_LANDMARKER_MODEL_PATH = Path(__file__).resolve().parent / "pose_landmarker_full.task"', tracker)
+        self.assertIn("PoseLandmarker.create_from_options", tracker)
+        self.assertIn("pose_results.pose_world_landmarks[0]", tracker)
         self.assertIn("def setup_indoor_emotion():", tracker)
         self.assertIn("footstep_payload = [float(track_id), float(real_x), float(real_y)]", tracker)
         self.assertIn("footstep_payload.append(emotion)", tracker)
         self.assertTrue((PYTHON_DIR / "2egait_lstm_model.h5").is_file())
+        self.assertTrue((PYTHON_DIR / "pose_landmarker_full.task").is_file())
+
+    def test_indoor_emotion_dependencies_are_declared(self):
+        pyproject = tomllib.loads((PYTHON_DIR / "pyproject.toml").read_text())
+        self.assertEqual(pyproject["project"]["requires-python"], ">=3.13,<3.14")
+        dependencies = pyproject["project"]["dependencies"]
+        self.assertTrue(any(dependency.startswith("tensorflow") for dependency in dependencies))
+        self.assertTrue(any(dependency.startswith("mediapipe") for dependency in dependencies))
 
 
 if __name__ == "__main__":

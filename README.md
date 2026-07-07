@@ -18,10 +18,11 @@
 
 ## 初回セットアップ
 
-Python 側は `uv` を使います。
+Python 側は `uv` を使います。TensorFlow が Python 3.14 に未対応のため、Python 3.13 を使います。
 
 ```sh
 cd python
+uv python install 3.13
 uv sync
 ```
 
@@ -55,16 +56,21 @@ uv run python tracker.py
 
 `tracker.py` がカメラを開き、検出した人の座標を `/footstep` として Processing に送ります。Processing は `/footstep` を受け取ると屋内モードになり、しばらく受信が止まると屋外モードに戻ります。
 
-## 屋内感情推定を使う場合
+## 屋内感情推定
 
-通常の `tracker.py` は座標だけを送ります。屋内でも LSTM/MediaPipe による感情推定を有効にする場合は、環境変数を付けて起動します。
+`tracker.py` はデフォルトで LSTM/MediaPipe による屋内感情推定を有効にします。推定に成功すると `/footstep` の4番目の値として `happy`、`neutral`、`sad` などの感情名を Processing に送ります。
 
 ```sh
 cd python
-ENABLE_INDOOR_EMOTION=1 uv run python tracker.py
+uv run python tracker.py
 ```
 
-この機能には `tensorflow` と `mediapipe` が必要です。現在の `pyproject.toml` には必須依存として入れていないため、使う場合は実行環境に追加してください。依存が足りない場合は警告を出して、通常の座標送信モードに戻ります。
+感情推定を無効化して座標だけを送りたい場合は、次のように起動します。
+
+```sh
+cd python
+ENABLE_INDOOR_EMOTION=0 uv run python tracker.py
+```
 
 ## モデル再学習
 
