@@ -31,9 +31,8 @@ FEATURE_KEYS = [
     'heading_change', 'step_length'
 ]
 
-MODEL_FEATURE_KEYS = FEATURE_KEYS[:13]
-EMOTION_NAMES = {0: "sad", 1: "happy"}
-PROCESSING_EMOTION_CODES = {"sad": 0, "neutral": 1, "happy": 2}
+MODEL_FEATURE_KEYS = [key for key in FEATURE_KEYS if key != "heading_change"]
+EMOTION_NAMES = {0: "sad", 1: "neutral", 2: "happy"}
 
 def step_handler(address, *args):
     if len(args) != len(FEATURE_KEYS):
@@ -49,14 +48,15 @@ def step_handler(address, *args):
 
     print(
         f"[推論結果] {emotion} | "
-        f"Sad: {probabilities[0]:.2f}, Happy: {probabilities[1]:.2f}"
+        f"Sad: {probabilities[0]:.2f}, "
+        f"Neutral: {probabilities[1]:.2f}, "
+        f"Happy: {probabilities[2]:.2f}"
     )
 
-    processing_client.send_message(
-        "/walking/prediction", PROCESSING_EMOTION_CODES[emotion]
-    )
+    processing_client.send_message("/walking/prediction", prediction)
     processing_client.send_message("/walking/sad_prob", float(probabilities[0]))
-    processing_client.send_message("/walking/happy_prob", float(probabilities[1]))
+    processing_client.send_message("/walking/neutral_prob", float(probabilities[1]))
+    processing_client.send_message("/walking/happy_prob", float(probabilities[2]))
     processing_client.send_message(
         "/walking/heading_change", float(full_features["heading_change"].iloc[0])
     )

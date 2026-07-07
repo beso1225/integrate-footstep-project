@@ -8,7 +8,22 @@ SKETCH_DIR = Path(__file__).resolve().parents[2] / "processing"
 
 class ProcessingContractTest(unittest.TestCase):
     def setUp(self):
-        self.sketch = (SKETCH_DIR / "processing.pde").read_text()
+        self.sketch = "\n".join(
+            path.read_text() for path in sorted(SKETCH_DIR.glob("*.pde"))
+        )
+
+    def test_sketch_is_split_by_responsibility(self):
+        expected_files = {
+            "processing.pde",
+            "Config.pde",
+            "Drawing.pde",
+            "Emotion.pde",
+            "Indoor.pde",
+            "OscHandlers.pde",
+            "Outdoor.pde",
+        }
+        actual_files = {path.name for path in SKETCH_DIR.glob("*.pde")}
+        self.assertTrue(expected_files.issubset(actual_files))
 
     def constant(self, name):
         match = re.search(rf"final float {name} = ([0-9.]+);", self.sketch)
@@ -28,6 +43,7 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertIn('msg.checkAddrPattern("/footstep")', self.sketch)
         self.assertIn('msg.checkAddrPattern("/walking/prediction")', self.sketch)
         self.assertIn('msg.checkAddrPattern("/walking/peak_g")', self.sketch)
+        self.assertIn("indoorEmotionFromMessage(msg)", self.sketch)
 
     def test_physical_dimensions_are_explicit(self):
         self.assertGreater(self.constant("PIXELS_PER_METER"), 0.0)
@@ -71,21 +87,37 @@ class ProcessingContractTest(unittest.TestCase):
         maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")
         self.assertGreater(maximum, 0.0)
         self.assertLess(maximum, 90.0)
-        self.assertIn("radians(inputHeadingChangeDegrees)", self.sketch)
+        self.assertIn("float angleDelta = inputHeadingChangeRadians;", self.sketch)
         self.assertIn(
             "constrain(angleDelta, -maxTurnRadians, maxTurnRadians)", self.sketch
         )
+        self.assertIn(
+            "currentAngle = (currentAngle + angleDelta + TWO_PI) % TWO_PI;",
+            self.sketch,
+        )
+        self.assertNotIn("radians(inputHeadingChangeDegrees)", self.sketch)
         self.assertNotIn("if (abs(angleDelta) > 10.0)", self.sketch)
 
     def test_random_turn_follows_the_side_of_the_next_foot(self):
         click_maximum = self.constant("CLICK_MAX_TURN_DEGREES")
         runtime_maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")
         self.assertGreater(click_maximum, 0.0)
+        self.assertLessEqual(click_maximum, 8.0)
         self.assertLessEqual(click_maximum, runtime_maximum)
         self.assertIn(
             "float magnitude = random(0, CLICK_MAX_TURN_DEGREES);",
             self.sketch,
         )
+        self.assertIn("radians(randomTurnForFoot(isRightFoot))", self.sketch)
+
+    def test_indoor_emotion_payload_is_optional_and_normalized(self):
+        self.assertIn("String indoorEmotionFromMessage(OscMessage msg)", self.sketch)
+        self.assertIn('msg.arguments().length >= 4', self.sketch)
+        self.assertIn('return normalizeEmotion(msg.get(3).stringValue());', self.sketch)
+        self.assertIn('return "happy";', self.sketch)
+        self.assertIn("normalizeEmotion(String emotion)", self.sketch)
+        self.assertIn("emotion.toLowerCase()", self.sketch)
+        self.assertIn('if (normalizedEmotion.equals("angry")) return "sad";', self.sketch)
         self.assertIn("return rightFoot ? magnitude : -magnitude;", self.sketch)
         self.assertIn("randomTurnForFoot(isRightFoot)", self.sketch)
         self.assertNotIn(
