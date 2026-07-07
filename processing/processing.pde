@@ -4,9 +4,19 @@ import processing.video.*;
 import java.util.HashMap;
 import java.util.ArrayList;
 
+void loadIndoorGridConfig() {
+  JSONObject indoorGridConfig = loadJSONObject("indoor_grid.json");
+  INDOOR_GRID_COLUMNS = indoorGridConfig.getInt("columns");
+  INDOOR_GRID_ROWS = indoorGridConfig.getInt("rows");
+  INDOOR_GRID_CELL_SIZE_CM = indoorGridConfig.getFloat("cell_size_cm");
+  INDOOR_TRACKING_WIDTH_CM = INDOOR_GRID_COLUMNS * INDOOR_GRID_CELL_SIZE_CM;
+  INDOOR_TRACKING_HEIGHT_CM = INDOOR_GRID_ROWS * INDOOR_GRID_CELL_SIZE_CM;
+}
+
 void setup() {
   size(1200, 800);
   oscP5 = new OscP5(this, 12000);
+  loadIndoorGridConfig();
 
   footHeight = round(cmToPixels(FOOT_LENGTH_CM));
   footWidth = round(footHeight * FOOT_WIDTH_TO_LENGTH_RATIO);
@@ -27,11 +37,6 @@ void setup() {
   );
   rightFootMask.resize(footWidth, footHeight);
 
-  p[0] = new PVector(100, 100);
-  p[1] = new PVector(width - 100, 100);
-  p[2] = new PVector(width - 100, height - 100);
-  p[3] = new PVector(100, height - 100);
-
   currentX = width / 2f;
   currentY = height / 2f;
   currentAngle = random(TWO_PI);
@@ -50,41 +55,19 @@ void draw() {
 }
 
 void mousePressed() {
-  boolean clickedCorner = false;
-
-  if (isCalibrationMode) {
-    for (int i = 0; i < 4; i++) {
-      if (dist(mouseX, mouseY, p[i].x, p[i].y) < 20) {
-        selectedCorner = i;
-        clickedCorner = true;
-        break;
-      }
-    }
-  }
-
-  if (!clickedCorner) {
-    stepOutdoor(
-      selectedEmotion,
-      OUTDOOR_DEFAULT_STEP_LENGTH_CM / 100.0,
-      radians(randomTurnForFoot(isRightFoot))
-    );
-  }
-}
-
-void mouseDragged() {
-  if (isCalibrationMode && selectedCorner != -1) {
-    p[selectedCorner].x = mouseX;
-    p[selectedCorner].y = mouseY;
-  }
-}
-
-void mouseReleased() {
-  selectedCorner = -1;
+  stepOutdoor(
+    selectedEmotion,
+    OUTDOOR_DEFAULT_STEP_LENGTH_CM / 100.0,
+    radians(randomTurnForFoot(isRightFoot))
+  );
 }
 
 void keyPressed() {
   if (key == 'c' || key == 'C') {
     isCalibrationMode = !isCalibrationMode;
+  }
+  if (key == 'r' || key == 'R') {
+    loadIndoorGridConfig();
   }
   if (key == '1') { selectedEmotion = "happy"; }
   else if (key == '2') { selectedEmotion = "sad"; }

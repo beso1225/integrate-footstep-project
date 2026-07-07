@@ -42,26 +42,45 @@ void drawCalibrationOverlay() {
 
   stroke(0, 255, 0);
   strokeWeight(2);
-  line(p[0].x, p[0].y, p[1].x, p[1].y);
-  line(p[1].x, p[1].y, p[2].x, p[2].y);
-  line(p[2].x, p[2].y, p[3].x, p[3].y);
-  line(p[3].x, p[3].y, p[0].x, p[0].y);
-  for (int i = 0; i < 4; i++) {
-    fill(255, 0, 0);
-    noStroke();
-    ellipse(p[i].x, p[i].y, 20, 20);
+  noFill();
+  rect(
+    indoorOriginX(),
+    indoorOriginY(),
+    cmToPixels(INDOOR_TRACKING_WIDTH_CM),
+    cmToPixels(INDOOR_TRACKING_HEIGHT_CM)
+  );
+
+  stroke(255, 255, 0, 180);
+  strokeWeight(1);
+  for (int column = 1; column < INDOOR_GRID_COLUMNS; column++) {
+    float realX = column * INDOOR_GRID_CELL_SIZE_CM;
+    PVector start = indoorToScreen(realX, 0.0);
+    PVector end = indoorToScreen(realX, INDOOR_TRACKING_HEIGHT_CM);
+    line(start.x, start.y, end.x, end.y);
+  }
+  for (int row = 1; row < INDOOR_GRID_ROWS; row++) {
+    float realY = row * INDOOR_GRID_CELL_SIZE_CM;
+    PVector start = indoorToScreen(0.0, realY);
+    PVector end = indoorToScreen(INDOOR_TRACKING_WIDTH_CM, realY);
+    line(start.x, start.y, end.x, end.y);
   }
   fill(255);
   textSize(16);
-  text("Calibration Mode: Drag red corners. Press 'c' to hide lines.", 20, 30);
-  text("Keys for click test: [1] Happy  [2] Sad  [3] Neutral", 20, 50);
+  text("Grid Overlay: Press 'c' to hide lines.", 20, 30);
+  text(
+    "Indoor grid: " + int(INDOOR_GRID_COLUMNS) + " x " + int(INDOOR_GRID_ROWS) +
+    " cells, " + nf(INDOOR_GRID_CELL_SIZE_CM, 0, 1) + " cm each",
+    20,
+    50
+  );
+  text("Keys for click test: [1] Happy  [2] Sad  [3] Neutral", 20, 70);
 
   if (millis() - lastIndoorTime <= indoorTimeout) {
     fill(255, 255, 0);
-    text("Current Mode: INDOOR (Camera Priority)", 20, 80);
+    text("Current Mode: INDOOR (Camera Priority)", 20, 100);
   } else {
     fill(0, 255, 255);
-    text("Current Mode: OUTDOOR (iPhone/Auto)", 20, 80);
+    text("Current Mode: OUTDOOR (iPhone/Auto)", 20, 100);
   }
 }
 

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import tomllib
 import unittest
@@ -7,6 +8,14 @@ PYTHON_DIR = Path(__file__).resolve().parents[1]
 
 
 class IntegrationFilesTest(unittest.TestCase):
+    def test_shared_indoor_grid_config_exists(self):
+        config_path = PYTHON_DIR.parent / "processing" / "data" / "indoor_grid.json"
+        self.assertTrue(config_path.is_file())
+        config = json.loads(config_path.read_text())
+        self.assertGreater(config["columns"], 0)
+        self.assertGreater(config["rows"], 0)
+        self.assertGreater(config["cell_size_cm"], 0)
+
     def test_training_script_declares_expected_training_assets(self):
         self.assertTrue((PYTHON_DIR / "train_model.py").is_file())
         script = (PYTHON_DIR / "train_model.py").read_text()
@@ -37,17 +46,32 @@ class IntegrationFilesTest(unittest.TestCase):
         self.assertIn("from .config import (", emotion_module)
         self.assertIn("from .config import (", runtime_module)
         self.assertIn("from .emotion import predict_indoor_emotion, setup_indoor_emotion", runtime_module)
+        self.assertIn("import json", config_module)
+        self.assertIn('GRID_CONFIG_PATH = BASE_DIR.parent / "processing" / "data" / "indoor_grid.json"', config_module)
+        self.assertIn("GRID_CONFIG = json.loads(GRID_CONFIG_PATH.read_text())", config_module)
+        self.assertIn("GRID_DEFINITION = load_grid_definition(GRID_CONFIG_PATH)", config_module)
+        self.assertIn("GRID_COLUMNS", config_module)
+        self.assertIn("GRID_ROWS", config_module)
+        self.assertIn("GRID_CELL_SIZE_CM", config_module)
+        self.assertIn("TRACKING_AREA_WIDTH_CM = GRID_COLUMNS * GRID_CELL_SIZE_CM", config_module)
+        self.assertIn("TRACKING_AREA_HEIGHT_CM = GRID_ROWS * GRID_CELL_SIZE_CM", config_module)
         self.assertIn("PoseLandmarker.create_from_options", emotion_module)
         self.assertIn("pose_results.pose_world_landmarks[0]", emotion_module)
         self.assertIn("def setup_indoor_emotion():", emotion_module)
         self.assertIn("footstep_payload = [float(track_id), float(real_x), float(real_y)]", runtime_module)
         self.assertIn("footstep_payload.append(emotion)", runtime_module)
+        self.assertIn("save_grid_definition(grid_definition, GRID_CONFIG_PATH)", runtime_module)
+        self.assertIn("grid_definition = load_grid_definition(GRID_CONFIG_PATH)", runtime_module)
+        self.assertIn("handle_keypress", runtime_module)
         self.assertTrue((PYTHON_DIR / "tracker" / "__init__.py").is_file())
         self.assertTrue((PYTHON_DIR / "tracker" / "config.py").is_file())
+        self.assertTrue((PYTHON_DIR / "tracker" / "grid.py").is_file())
         self.assertTrue((PYTHON_DIR / "tracker" / "emotion.py").is_file())
         self.assertTrue((PYTHON_DIR / "tracker" / "runtime.py").is_file())
         self.assertTrue((PYTHON_DIR / "2egait_lstm_model.h5").is_file())
         self.assertTrue((PYTHON_DIR / "pose_landmarker_full.task").is_file())
+        self.assertIn('loadJSONObject("indoor_grid.json")', (PYTHON_DIR.parent / "processing" / "processing.pde").read_text())
+        self.assertIn("if (key == 'r' || key == 'R')", (PYTHON_DIR.parent / "processing" / "processing.pde").read_text())
 
     def test_indoor_emotion_dependencies_are_declared(self):
         pyproject = tomllib.loads((PYTHON_DIR / "pyproject.toml").read_text())

@@ -15,11 +15,20 @@ final float OUTDOOR_STEP_WIDTH_CM = 5.0;
 final float OUTDOOR_MAX_TURN_DEGREES = 25.0;
 final float CLICK_MAX_TURN_DEGREES = 8.0;
 
+int INDOOR_GRID_COLUMNS = 0;
+int INDOOR_GRID_ROWS = 0;
+float INDOOR_GRID_CELL_SIZE_CM = 0.0;
+float INDOOR_TRACKING_WIDTH_CM = 0.0;
+float INDOOR_TRACKING_HEIGHT_CM = 0.0;
+float[] indoorHomography = {
+  1.0, 0.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 0.0, 1.0
+};
+
 int footWidth;
 int footHeight;
 
-PVector[] p = new PVector[4];
-int selectedCorner = -1;
 boolean isCalibrationMode = true;
 
 HashMap<Integer, WalkerState> walkers = new HashMap<Integer, WalkerState>();
