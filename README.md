@@ -8,7 +8,7 @@
 - `python/main.py`: 屋外モード用です。iPhone アプリから OSC を受け取り、感情推定して Processing に転送します。
 - `python/tracker.py`: 屋内モード用です。カメラ映像から人の足元座標を推定して Processing に送ります。
 - `python/train_model.py`: 屋外モードの Random Forest モデルを再学習するスクリプトです。
-- `python/walking_data/`: 屋外モデルの学習用 CSV です。
+- `python/walking_data/`: 屋外モデルの学習用 CSV を配置するディレクトリです（repo には含めません）。
 
 ## 通信ポート
 
@@ -81,7 +81,7 @@ cd python
 uv run python train_model.py
 ```
 
-学習データは `python/walking_data/` の `sad_raw.csv`、`neutral_raw.csv`、`happy_raw.csv` を使います。出力モデルは `python/walking_emotion_rf.pkl` です。
+学習データは `python/walking_data/` に `sad_raw.csv`、`neutral_raw.csv`、`happy_raw.csv` として配置してください。これらの生データ (raw data) は repo に含めません。出力モデルは `python/walking_emotion_rf.pkl` です。
 
 ## テスト
 

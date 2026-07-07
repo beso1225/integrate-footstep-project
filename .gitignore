@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+
+to_integrate/
+
+python/walking_data/

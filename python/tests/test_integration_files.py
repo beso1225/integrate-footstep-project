@@ -7,10 +7,12 @@ PYTHON_DIR = Path(__file__).resolve().parents[1]
 
 
 class IntegrationFilesTest(unittest.TestCase):
-    def test_training_assets_are_available_in_python_dir(self):
+    def test_training_script_declares_expected_training_assets(self):
         self.assertTrue((PYTHON_DIR / "train_model.py").is_file())
+        script = (PYTHON_DIR / "train_model.py").read_text()
+        self.assertIn('DATA_DIR = BASE_DIR / "walking_data"', script)
         for filename in ("sad_raw.csv", "neutral_raw.csv", "happy_raw.csv"):
-            self.assertTrue((PYTHON_DIR / "walking_data" / filename).is_file())
+            self.assertIn(f'"{filename}"', script)
 
     def test_training_script_uses_integrated_three_class_contract(self):
         script = (PYTHON_DIR / "train_model.py").read_text()
