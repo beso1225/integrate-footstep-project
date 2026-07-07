@@ -5,7 +5,7 @@ import numpy as np
 from pythonosc import udp_client
 from ultralytics import YOLO
 
-from tracker_config import (
+from .config import (
     CAMERA_INDEX,
     PROCESSING_HOST,
     PROCESSING_PORT,
@@ -16,7 +16,7 @@ from tracker_config import (
     WINDOW_SIZE,
     YOLO_MODEL_PATH,
 )
-from tracker_emotion import predict_indoor_emotion, setup_indoor_emotion
+from .emotion import predict_indoor_emotion, setup_indoor_emotion
 
 
 def mouse_callback(event, x, y, flags, param):

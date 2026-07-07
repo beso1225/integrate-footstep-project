@@ -3,7 +3,7 @@ import os
 import cv2
 import numpy as np
 
-from tracker_config import (
+from .config import (
     ENABLE_INDOOR_EMOTION,
     INDOOR_EMOTION_MODEL_PATH,
     INDOOR_EMOTIONS,

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 YOLO_MODEL_PATH = BASE_DIR / "yolov8n.pt"
 INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "2egait_lstm_model.h5"
