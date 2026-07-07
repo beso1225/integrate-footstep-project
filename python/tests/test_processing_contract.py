@@ -72,10 +72,15 @@ class ProcessingContractTest(unittest.TestCase):
         maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")
         self.assertGreater(maximum, 0.0)
         self.assertLess(maximum, 90.0)
-        self.assertIn("radians(inputHeadingChangeDegrees)", self.sketch)
+        self.assertIn("float angleDelta = inputHeadingChangeRadians;", self.sketch)
         self.assertIn(
             "constrain(angleDelta, -maxTurnRadians, maxTurnRadians)", self.sketch
         )
+        self.assertIn(
+            "currentAngle = (currentAngle + angleDelta + TWO_PI) % TWO_PI;",
+            self.sketch,
+        )
+        self.assertNotIn("radians(inputHeadingChangeDegrees)", self.sketch)
         self.assertNotIn("if (abs(angleDelta) > 10.0)", self.sketch)
 
     def test_random_turn_follows_the_side_of_the_next_foot(self):
@@ -88,6 +93,7 @@ class ProcessingContractTest(unittest.TestCase):
             "float magnitude = random(0, CLICK_MAX_TURN_DEGREES);",
             self.sketch,
         )
+        self.assertIn("radians(randomTurnForFoot(isRightFoot))", self.sketch)
 
     def test_indoor_emotion_payload_is_optional_and_normalized(self):
         self.assertIn("String indoorEmotionFromMessage(OscMessage msg)", self.sketch)

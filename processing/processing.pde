@@ -275,7 +275,7 @@ void oscEvent(OscMessage msg) {
           stepOutdoor(
             msg.get(0).stringValue(),
             OUTDOOR_DEFAULT_STEP_LENGTH_CM / 100.0,
-            randomTurnForFoot(isRightFoot)
+            radians(randomTurnForFoot(isRightFoot))
           );
         }
       }
@@ -287,13 +287,13 @@ void oscEvent(OscMessage msg) {
 void stepOutdoor(
   String receivedEmotion,
   float inputStepLengthMeters,
-  float inputHeadingChangeDegrees
+  float inputHeadingChangeRadians
 ) {
   receivedEmotion = normalizeEmotion(receivedEmotion);
   
-  // 1. 急旋回で左右の足が交差しないよう、1歩ごとの旋回を制限する
+  // 1. iPhone側はyaw差分をラジアンで送るため、そのまま累積する
   float maxTurnRadians = radians(OUTDOOR_MAX_TURN_DEGREES);
-  float angleDelta = radians(inputHeadingChangeDegrees);
+  float angleDelta = inputHeadingChangeRadians;
   angleDelta = constrain(angleDelta, -maxTurnRadians, maxTurnRadians);
   currentAngle = (currentAngle + angleDelta + TWO_PI) % TWO_PI;
 
@@ -369,7 +369,7 @@ void mousePressed() {
     stepOutdoor(
       selectedEmotion,
       OUTDOOR_DEFAULT_STEP_LENGTH_CM / 100.0,
-      randomTurnForFoot(isRightFoot)
+      radians(randomTurnForFoot(isRightFoot))
     );
   }
 }
