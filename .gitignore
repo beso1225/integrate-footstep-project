@@ -4,3 +4,5 @@ __pycache__/
 to_integrate/
 
 python/walking_data/
+
+processing/data/indoor_grid.json
