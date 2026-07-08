@@ -1,12 +1,14 @@
+float indoorOriginX() {
+  return max(0, (width - cmToPixels(INDOOR_TRACKING_WIDTH_CM)) / 2.0);
+}
+
+float indoorOriginY() {
+  return max(0, (height - cmToPixels(INDOOR_TRACKING_HEIGHT_CM)) / 2.0);
+}
+
 PVector indoorToScreen(float realX, float realY) {
-  float revX = 1.0 - realX / 150.0;
-  float revY = 1.0 - realY / 210.0;
-  float screenX = lerp(
-    lerp(p[0].x, p[1].x, revX), lerp(p[3].x, p[2].x, revX), revY
-  );
-  float screenY = lerp(
-    lerp(p[0].y, p[1].y, revX), lerp(p[3].y, p[2].y, revX), revY
-  );
+  float screenX = indoorOriginX() + cmToPixels(realX);
+  float screenY = indoorOriginY() + cmToPixels(realY);
   return new PVector(screenX, screenY);
 }
 

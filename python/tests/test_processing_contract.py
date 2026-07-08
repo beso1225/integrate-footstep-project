@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import re
 import unittest
 
@@ -44,6 +45,7 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertIn('msg.checkAddrPattern("/walking/prediction")', self.sketch)
         self.assertIn('msg.checkAddrPattern("/walking/peak_g")', self.sketch)
         self.assertIn("indoorEmotionFromMessage(msg)", self.sketch)
+        self.assertIn("if (key == 'r' || key == 'R')", self.sketch)
 
     def test_physical_dimensions_are_explicit(self):
         self.assertGreater(self.constant("PIXELS_PER_METER"), 0.0)
@@ -79,9 +81,31 @@ class ProcessingContractTest(unittest.TestCase):
             "atan2(currentScreen.y - previousScreen.y, currentScreen.x - previousScreen.x)",
             self.sketch,
         )
-        self.assertNotIn(
-            "atan2(realY - w.prevRealY, realX - w.prevRealX)", self.sketch
+        self.assertNotIn("atan2(realY - w.prevRealY, realX - w.prevRealX)", self.sketch)
+
+    def test_indoor_projection_uses_grid_based_dimensions(self):
+        config = json.loads((SKETCH_DIR / "data" / "indoor_grid.json").read_text())
+        self.assertGreater(config["cell_size_cm"], 0.0)
+        self.assertGreater(config["columns"], 0.0)
+        self.assertGreater(config["rows"], 0.0)
+        self.assertIn('loadJSONObject("indoor_grid.json")', self.sketch)
+        self.assertIn(
+            "INDOOR_TRACKING_WIDTH_CM = INDOOR_GRID_COLUMNS * INDOOR_GRID_CELL_SIZE_CM;",
+            self.sketch,
         )
+        self.assertIn(
+            "INDOOR_TRACKING_HEIGHT_CM = INDOOR_GRID_ROWS * INDOOR_GRID_CELL_SIZE_CM;",
+            self.sketch,
+        )
+        self.assertIn("float screenX = indoorOriginX() + cmToPixels(realX);", self.sketch)
+        self.assertIn("float screenY = indoorOriginY() + cmToPixels(realY);", self.sketch)
+        self.assertNotIn("applyIndoorHomography", self.sketch)
+        self.assertNotIn("solveIndoorLinearSystem", self.sketch)
+
+    def test_processing_does_not_apply_projector_warp_to_positions(self):
+        self.assertIn("float screenX = currentX;", self.sketch)
+        self.assertIn("float screenY = currentY;", self.sketch)
+        self.assertNotIn("lerp(lerp(p[0].x, p[1].x, normX)", self.sketch)
 
     def test_outdoor_turn_is_limited_to_prevent_foot_crossing(self):
         maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")

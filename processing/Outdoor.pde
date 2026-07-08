@@ -36,10 +36,8 @@ void stepOutdoor(
   currentX = nextX;
   currentY = nextY;
 
-  float normX = currentX / width;
-  float normY = currentY / height;
-  float screenX = lerp(lerp(p[0].x, p[1].x, normX), lerp(p[3].x, p[2].x, normX), normY);
-  float screenY = lerp(lerp(p[0].y, p[1].y, normX), lerp(p[3].y, p[2].y, normX), normY);
+  float screenX = currentX;
+  float screenY = currentY;
 
   float lateralOffset = cmToPixels(OUTDOOR_STEP_WIDTH_CM) / 2.0;
   Footprint newFootprint = new Footprint(

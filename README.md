@@ -56,6 +56,14 @@ uv run python tracker.py
 
 `tracker.py` がカメラを開き、検出した人の座標を `/footstep` として Processing に送ります。Processing は `/footstep` を受け取ると屋内モードになり、しばらく受信が止まると屋外モードに戻ります。
 
+`tracker.py` の補正は中央 1 マスを基準に行います。`tracker.py` の表示ウィンドウ上の黄色いハンドルで中央マスの四隅を地面上の基準正方形に合わせると、青い外枠とグリッド全体がその場で再計算されます。
+
+屋内の台形補正は、固定長の正方形グリッドを基準にしています。グリッド設定は `processing/data/indoor_grid.json` を `tracker` と `Processing` が共通で読み込みます。中央マスの四隅を地面上の基準正方形に合わせると、全体グリッドと足座標が同じ実寸座標系で扱われます。
+
+`Processing` はプロジェクタ補正を行いません。`/footstep` で受け取る `realX`, `realY` をそのまま `PIXELS_PER_METER` に従って top-down に描画します。投影面への台形補正は外部アプリ側で行う前提です。
+
+`tracker.py` のウィンドウでは、`A` / `D` で列数、`X` / `W` で行数、`J` / `K` で 1 マスの辺長を調整できます。`P` で `indoor_grid.json` に保存し、`R` で保存済み設定を再読込します。Processing を起動中なら、Processing 側で `R` キーを押すと同じ設定ファイルを再読込できます。
+
 ## 屋内感情推定
 
 `tracker.py` はデフォルトで LSTM/MediaPipe による屋内感情推定を有効にします。推定に成功すると `/footstep` の4番目の値として `happy`、`neutral`、`sad` などの感情名を Processing に送ります。
@@ -95,5 +103,5 @@ PYTHONDONTWRITEBYTECODE=1 uv run python -m unittest discover -s tests -v
 ## よくある確認点
 
 - Processing の動画読み込みエラーが出る場合は、`processing/data/movie/happy.mp4`、`sad.mp4`、`neutral.mp4` が存在するか確認してください。
-- カメラを開けない場合は、macOS のカメラ権限、他アプリでカメラを使用中でないか、`python/tracker.py` の `cv2.VideoCapture(0)` の番号を確認してください。
+- カメラを開けない場合は、macOS のカメラ権限、他アプリでカメラを使用中でないか、`python/tracker/config.py` の `CAMERA_INDEX` を確認してください。
 - 屋外モードで足跡が出ない場合は、iPhone アプリが `5005` に送信しているか、`main.py` が起動しているか、Processing が `12000` で起動しているか確認してください。
