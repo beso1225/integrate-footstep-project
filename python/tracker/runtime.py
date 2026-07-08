@@ -19,11 +19,13 @@ from .config import (
     YOLO_MODEL_PATH,
 )
 from .emotion import predict_indoor_emotion, setup_indoor_emotion
-from .grid import load_grid_definition, save_grid_definition
+from .grid import load_calibration_points, load_grid_definition, save_grid_definition
 
 
-def create_calibration_state(grid_definition):
-    return CalibrationState(points=create_initial_center_cell_points(grid_definition))
+def create_calibration_state(grid_definition, calibration_points=None):
+    if calibration_points is None:
+        calibration_points = create_initial_center_cell_points(grid_definition)
+    return CalibrationState(points=np.array(calibration_points, dtype=float))
 
 
 def create_destination_points(grid_definition):
@@ -283,7 +285,8 @@ def run():
 
     indoor_emotion_enabled = setup_indoor_emotion()
     cap = open_camera()
-    calibration_state = create_calibration_state(grid_definition)
+    calibration_points = load_calibration_points(GRID_CONFIG_PATH)
+    calibration_state = create_calibration_state(grid_definition, calibration_points)
     configure_window(calibration_state)
 
     print("システムを開始します。")
@@ -311,10 +314,15 @@ def run():
         if key_code == ord("q"):
             break
         if key_code == ord("p"):
-            save_grid_definition(grid_definition, GRID_CONFIG_PATH)
+            save_grid_definition(grid_definition, GRID_CONFIG_PATH, calibration_state.points)
             print(f"グリッド設定を保存しました: {GRID_CONFIG_PATH}")
         elif key_code == ord("r"):
             grid_definition = load_grid_definition(GRID_CONFIG_PATH)
+            calibration_points = load_calibration_points(GRID_CONFIG_PATH)
+            calibration_state.points = create_calibration_state(
+                grid_definition, calibration_points
+            ).points
+            calibration_state.stop_drag()
             print(
                 f"グリッド設定を再読込しました: {grid_definition.columns} x {grid_definition.rows}, "
                 f"{grid_definition.cell_size_cm:.1f}cm"

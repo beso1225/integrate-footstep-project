@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
+
 
 @dataclass(frozen=True)
 class GridDefinition:
@@ -56,7 +58,16 @@ def load_grid_definition(path):
     )
 
 
-def save_grid_definition(grid_definition, path):
-    Path(path).write_text(
-        json.dumps(grid_definition.to_dict(), indent=2) + "\n"
-    )
+def load_calibration_points(path):
+    payload = json.loads(Path(path).read_text())
+    calibration_points = payload.get("calibration_points")
+    if calibration_points is None:
+        return None
+    return np.array(calibration_points, dtype=float)
+
+
+def save_grid_definition(grid_definition, path, calibration_points=None):
+    payload = grid_definition.to_dict()
+    if calibration_points is not None:
+        payload["calibration_points"] = np.asarray(calibration_points, dtype=float).tolist()
+    Path(path).write_text(json.dumps(payload, indent=2) + "\n")
