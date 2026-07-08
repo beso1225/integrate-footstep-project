@@ -39,7 +39,6 @@ void oscEvent(OscMessage msg) {
       w.prevRealX = realX;
       w.prevRealY = realY;
       w.lastStepTime = currentTime;
-      fadeOldFootprints();
     }
   } else {
     if (millis() - lastIndoorTime > indoorTimeout) {

@@ -45,6 +45,4 @@ void stepOutdoor(
   );
   footprints.add(newFootprint);
   isRightFoot = !isRightFoot;
-
-  fadeOldFootprints();
 }

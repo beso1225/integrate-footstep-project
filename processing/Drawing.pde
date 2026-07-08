@@ -4,8 +4,13 @@ void drawFootprints() {
 
     if (fp.state.equals("fadeIn")) {
       fp.alpha = min(fp.alpha + fp.fadeSpeed, 255);
-    } else if (fp.state.equals("fadeOut")) {
-      fp.alpha = max(fp.alpha - fp.fadeSpeed, 0);
+      if (fp.alpha >= 255) fp.state = "visible";
+    }
+
+    float elapsedSinceHold = millis() - fp.createdAt - FOOTPRINT_HOLD_MS;
+    if (elapsedSinceHold > 0) {
+      fp.state = "fadeOut";
+      fp.alpha = max(map(elapsedSinceHold, 0, FOOTPRINT_FADE_OUT_MS, 255, 0), 0);
       if (fp.alpha == 0) { fp.isComplete = true; }
     }
     if (fp.isComplete) {
@@ -84,16 +89,6 @@ void drawCalibrationOverlay() {
   }
 }
 
-void fadeOldFootprints() {
-  int activeCount = 0;
-  for (int i = footprints.size() - 1; i >= 0; i--) {
-    if (!footprints.get(i).state.equals("fadeOut")) {
-      activeCount++;
-      if (activeCount > 4) footprints.get(i).state = "fadeOut";
-    }
-  }
-}
-
 class Footprint {
   float x, y, angle;
   float lateralOffset;
@@ -103,6 +98,7 @@ class Footprint {
   float fadeSpeed;
   String state;
   boolean isComplete;
+  int createdAt;
 
   ArrayList<Particle> particles = new ArrayList<Particle>();
   int maxParticles = 20;
@@ -125,6 +121,7 @@ class Footprint {
     fadeSpeed = 10;
     state = "fadeIn";
     isComplete = false;
+    createdAt = millis();
 
     initializeParticles();
   }

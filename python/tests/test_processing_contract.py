@@ -107,6 +107,16 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertIn("float screenY = currentY;", self.sketch)
         self.assertNotIn("lerp(lerp(p[0].x, p[1].x, normX)", self.sketch)
 
+    def test_footprints_fade_by_elapsed_time_instead_of_fixed_count(self):
+        self.assertGreater(self.constant("FOOTPRINT_HOLD_MS"), 0.0)
+        self.assertGreater(self.constant("FOOTPRINT_FADE_OUT_MS"), 0.0)
+        self.assertIn("int createdAt;", self.sketch)
+        self.assertIn("createdAt = millis();", self.sketch)
+        self.assertIn("float elapsedSinceHold = millis() - fp.createdAt - FOOTPRINT_HOLD_MS;", self.sketch)
+        self.assertIn("map(elapsedSinceHold, 0, FOOTPRINT_FADE_OUT_MS, 255, 0)", self.sketch)
+        self.assertNotIn("if (activeCount > 4)", self.sketch)
+        self.assertNotIn("fadeOldFootprints();", self.sketch)
+
     def test_outdoor_turn_is_limited_to_prevent_foot_crossing(self):
         maximum = self.constant("OUTDOOR_MAX_TURN_DEGREES")
         self.assertGreater(maximum, 0.0)
