@@ -59,12 +59,48 @@ def setup_indoor_emotion():
 
 
 def extract_egait_features(landmarks):
-    mp_indices = [24, 23, 0, 0, 11, 13, 15, 12, 14, 16, 23, 25, 27, 24, 26, 28]
-    features = []
-    for index in mp_indices:
-        landmark = landmarks[index]
-        features.extend([landmark.x, landmark.y, landmark.z])
-    return np.array(features)
+    # ヘルパー関数: MediaPipeのランドマークからnumpy配列を取得
+    def get_pt(idx):
+        return np.array([landmarks[idx].x, landmarks[idx].y, landmarks[idx].z])
+
+    # 1. MediaPipeに存在する関節を取得
+    head = get_pt(0)       # 鼻を頭の代わりとする
+    l_shoulder = get_pt(11)
+    r_shoulder = get_pt(12)
+    l_elbow = get_pt(13)
+    r_elbow = get_pt(14)
+    l_hand = get_pt(15)    # 手首を手の代わりとする
+    r_hand = get_pt(16)
+    l_hip = get_pt(23)
+    r_hip = get_pt(24)
+    l_knee = get_pt(25)
+    r_knee = get_pt(26)
+    l_foot = get_pt(27)    # 足首を足の代わりとする
+    r_foot = get_pt(28)
+
+    # 2. MediaPipeに存在しない関節（Root, Spine, Neck）を中間点から計算
+    root = (l_hip + r_hip) / 2.0             # 左右の腰の中間
+    neck = (l_shoulder + r_shoulder) / 2.0   # 左右の肩の中間
+    spine = (root + neck) / 2.0              # 腰と首の中間を背骨とする
+
+    # 3. ご指定の順番通りに16個の関節をリスト化
+    joints = [
+        root, spine, neck, head,
+        l_shoulder, l_elbow, l_hand,
+        r_shoulder, r_elbow, r_hand,
+        l_hip, l_knee, l_foot,
+        r_hip, r_knee, r_foot
+    ]
+
+    # 4. 腰(root)を原点(0,0,0)とする正規化
+    # すべての関節座標からrootの座標を引き算する
+    normalized_features = []
+    for joint in joints:
+        normalized_joint = joint - root
+        normalized_features.extend(normalized_joint.tolist())
+
+    # 48次元 (16関節 × 3座標) の1次元配列として返す
+    return np.array(normalized_features, dtype=np.float32)
 
 
 def get_cached_indoor_emotion(track_id):
