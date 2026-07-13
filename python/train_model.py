@@ -1,66 +1,69 @@
-from pathlib import Path
-
-import joblib
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
-
-
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "walking_data"
-MODEL_PATH = BASE_DIR / "walking_emotion_rf.pkl"
-
-DROP_COLUMNS = ["step_num", "timestamp", "label", "heading_change"]
-LABELS = {
-    "sad_raw.csv": 0,
-    "neutral_raw.csv": 1,
-    "happy_raw.csv": 2,
-}
-TARGET_NAMES = ["Sad", "Neutral", "Happy"]
-
-
-def load_training_data():
-    frames = []
-    for filename, label in LABELS.items():
-        csv_path = DATA_DIR / filename
-        frame = pd.read_csv(csv_path)
-        frame["label"] = label
-        frames.append(frame)
-
-    data = pd.concat(frames, ignore_index=True)
-    return data[data["step_num"] > 5]
-
+import joblib
 
 def main():
-    data = load_training_data()
-    features = data.drop(columns=DROP_COLUMNS)
-    labels = data["label"]
+    # 1. データの読み込み (4クラスに対応)
+    try:
+        sad_df = pd.read_csv('sad_raw.csv')
+        neutral_df = pd.read_csv('neutral_raw.csv')
+        positive_df = pd.read_csv('positive_raw.csv')
+        angry_df = pd.read_csv('angry_raw.csv')
+    except FileNotFoundError as e:
+        print(f"Error: ファイルが見つかりません。パスを確認してください。: {e}")
+        return
 
-    print(f"学習データ総数: {len(data)} steps")
-    print(f"使用する特徴量一覧 ({len(features.columns)}個):")
-    print(list(features.columns))
+    # 2. ラベルの付与 (Sad=0, Neutral=1, Positive=2, Angry=3)
+    sad_df['label'] = 0
+    neutral_df['label'] = 1
+    positive_df['label'] = 2
+    angry_df['label'] = 3
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        features, labels, test_size=0.2, random_state=42, stratify=labels
+    # 3. データの結合と前処理
+    df = pd.concat([sad_df, neutral_df, positive_df, angry_df], ignore_index=True)
+    
+    # 歩き始めの不安定なデータ（最初の5歩）を削除
+    df = df[df['step_num'] > 5]
+
+    # 特徴量（X）とターゲット（y）の分離
+    # 推論時と同様に 'heading_change' を除外し、方向不変な9個の特徴量にする
+    drop_cols = ['step_num', 'timestamp', 'label', 'heading_change']
+    X = df.drop(columns=drop_cols)
+    y = df['label']
+
+    print(f"学習データ総数: {len(df)} ステップ")
+    print(f"構成 -> Sad: {len(sad_df)}, Neutral: {len(neutral_df)}, Positive: {len(positive_df)}, Angry: {len(angry_df)}")
+    print(f"使用する特徴量一覧 ({len(X.columns)}個): {list(X.columns)}")
+
+    # 4. 訓練データとテストデータに分割 (8:2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+    # 5. Random Forest モデルの訓練 (不均衡補正付き)
+    model = RandomForestClassifier(
+        n_estimators=100, 
+        max_depth=7, 
+        random_state=42, 
+        class_weight='balanced'
     )
+    model.fit(X_train, y_train)
 
-    model = RandomForestClassifier(n_estimators=100, max_depth=7, random_state=42)
-    model.fit(x_train, y_train)
+    # 6. 評価 (4クラスのレポート)
+    y_pred = model.predict(X_test)
+    print("\n--- 分類パフォーマンス評価 (※参考値) ---")
+    print(classification_report(y_test, y_pred, target_names=['Sad', 'Neutral', 'Positive', 'Angry']))
 
-    predictions = model.predict(x_test)
-    print("\n--- Classification Report ---")
-    print(classification_report(y_test, predictions, target_names=TARGET_NAMES))
+    # 7. 特徴量の重要度（Feature Importance）の出力
+    print("\n--- 特徴量重要度 (貢献度が高い順) ---")
+    importances = model.feature_importances_
+    feat_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
+    print(feat_importances)
 
-    importances = pd.Series(
-        model.feature_importances_, index=features.columns
-    ).sort_values(ascending=False)
-    print("\n--- Feature Importance ---")
-    print(importances)
+    # 8. モデルの保存
+    model_filename = 'walking_emotion_rf.pkl'
+    joblib.dump(model, model_filename)
+    print(f"\nモデルを保存しました: {model_filename}")
 
-    joblib.dump(model, MODEL_PATH)
-    print(f"\nモデルを保存しました: {MODEL_PATH}")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
