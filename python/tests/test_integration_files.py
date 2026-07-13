@@ -20,14 +20,15 @@ class IntegrationFilesTest(unittest.TestCase):
         self.assertTrue((PYTHON_DIR / "train_model.py").is_file())
         script = (PYTHON_DIR / "train_model.py").read_text()
         self.assertIn('DATA_DIR = BASE_DIR / "walking_data"', script)
-        for filename in ("sad_raw.csv", "neutral_raw.csv", "happy_raw.csv"):
+        for filename in ("sad_raw.csv", "neutral_raw.csv", "happy_raw.csv", "angry_raw.csv"):
             self.assertIn(f'"{filename}"', script)
 
-    def test_training_script_uses_integrated_three_class_contract(self):
+    def test_training_script_uses_integrated_four_class_contract(self):
         script = (PYTHON_DIR / "train_model.py").read_text()
         self.assertIn('"sad_raw.csv": 0', script)
         self.assertIn('"neutral_raw.csv": 1', script)
         self.assertIn('"happy_raw.csv": 2', script)
+        self.assertIn('"angry_raw.csv": 3', script)
         self.assertIn('"heading_change"', script)
         self.assertIn('MODEL_PATH = BASE_DIR / "walking_emotion_rf.pkl"', script)
 

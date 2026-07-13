@@ -78,7 +78,7 @@ void drawCalibrationOverlay() {
     20,
     50
   );
-  text("Keys for click test: [1] Happy  [2] Sad  [3] Neutral", 20, 70);
+  text("Keys for click test: [1] Happy  [2] Sad  [3] Neutral  [4] Angry", 20, 70);
 
   if (millis() - lastIndoorTime <= indoorTimeout) {
     fill(255, 255, 0);
@@ -169,6 +169,11 @@ class Particle {
       size = random(4.0, 7.5);
       rotation = random(TWO_PI);
       rotVel = random(-0.05, 0.05);
+    } else if (emotion.equals("angry")) {
+      vel = new PVector(random(-1.0, 1.0), random(-1.0, 1.0));
+      size = random(6.0, 14.0);
+      rotation = random(TWO_PI);
+      rotVel = random(-0.15, 0.15);
     } else {
       vel = new PVector(random(-0.15, 0.15), random(-0.25, 0.25));
       size = random(4, 10);
@@ -177,7 +182,7 @@ class Particle {
 
   void update() {
     pos.add(vel);
-    if (emotion.equals("happy") || emotion.equals("neutral")) rotation += rotVel;
+    if (emotion.equals("happy") || emotion.equals("neutral") || emotion.equals("angry")) rotation += rotVel;
     life -= fadeRate;
     if (life < 0) life = 0;
   }
@@ -201,6 +206,12 @@ class Particle {
       ellipse(0, 0, size * 1.8f, size * 0.8f);
       fill(200, 255, 200, baseAlpha * 0.7f);
       ellipse(0, 0, size * 0.8f, size * 0.3f);
+    } else if (emotion.equals("angry")) {
+      fill(255, 50, 20, baseAlpha);
+      rotate(rotation);
+      rect(-size/2, -size/2, size * 1.3f, size * 1.3f);
+      fill(255, 180, 0, baseAlpha * 0.8f);
+      ellipse(0, 0, size * 0.6f, size * 0.6f);
     } else {
       fill(173, 216, 230, baseAlpha * 0.6f);
       ellipse(0, 0, size, size);

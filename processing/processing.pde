@@ -27,6 +27,8 @@ void setup() {
   sadMovie.loop();
   neutralMovie = new Movie(this, "movie/neutral.mp4");
   neutralMovie.loop();
+  angryMovie = new Movie(this, "movie/angry.mp4");
+  angryMovie.loop();
 
   PImage fullImage = loadImage("img/footprint.png");
   leftFootMask = fullImage.get(0, 0, fullImage.width / 2, fullImage.height);
@@ -72,4 +74,5 @@ void keyPressed() {
   if (key == '1') { selectedEmotion = "happy"; }
   else if (key == '2') { selectedEmotion = "sad"; }
   else if (key == '3') { selectedEmotion = "neutral"; }
+  else if (key == '4') { selectedEmotion = "angry"; }
 }

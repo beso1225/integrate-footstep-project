@@ -1,6 +1,6 @@
 OscP5 oscP5;
 
-Movie happyMovie, sadMovie, neutralMovie;
+Movie happyMovie, sadMovie, neutralMovie, angryMovie;
 PImage leftFootMask, rightFootMask;
 
 final float PIXELS_PER_METER = 280.0;

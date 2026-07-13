@@ -16,17 +16,22 @@ LABELS = {
     "sad_raw.csv": 0,
     "neutral_raw.csv": 1,
     "happy_raw.csv": 2,
+    "angry_raw.csv": 3,
 }
-TARGET_NAMES = ["Sad", "Neutral", "Happy"]
+TARGET_NAMES = ["Sad", "Neutral", "Happy", "Angry"]
 
 
 def load_training_data():
     frames = []
     for filename, label in LABELS.items():
         csv_path = DATA_DIR / filename
-        frame = pd.read_csv(csv_path)
-        frame["label"] = label
-        frames.append(frame)
+        try:
+            frame = pd.read_csv(csv_path)
+            frame["label"] = label
+            frames.append(frame)
+        except FileNotFoundError:
+            print(f"Error: {csv_path} が見つかりません。ファイルを正しく配置してください。")
+            exit(1)
 
     data = pd.concat(frames, ignore_index=True)
     return data[data["step_num"] > 5]
@@ -38,6 +43,12 @@ def main():
     labels = data["label"]
 
     print(f"学習データ総数: {len(data)} steps")
+    
+    # 各クラスごとのデータ内訳を表示
+    counts = labels.value_counts().sort_index()
+    counts_str = ", ".join([f"{TARGET_NAMES[i]}: {counts.get(i, 0)}" for i in range(len(TARGET_NAMES))])
+    print(f"構成 -> {counts_str}")
+    
     print(f"使用する特徴量一覧 ({len(features.columns)}個):")
     print(list(features.columns))
 
@@ -45,7 +56,13 @@ def main():
         features, labels, test_size=0.2, random_state=42, stratify=labels
     )
 
-    model = RandomForestClassifier(n_estimators=100, max_depth=7, random_state=42)
+    # 不均衡補正 (class_weight="balanced") を追加
+    model = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=7,
+        random_state=42,
+        class_weight="balanced",
+    )
     model.fit(x_train, y_train)
 
     predictions = model.predict(x_test)
