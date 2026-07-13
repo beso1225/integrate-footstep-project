@@ -170,8 +170,8 @@ class Particle {
       rotation = random(TWO_PI);
       rotVel = random(-0.05, 0.05);
     } else if (emotion.equals("angry")) {
-      vel = new PVector(random(-1.0, 1.0), random(-1.0, 1.0)); // 激しく四方へ
-      size = random(6.0, 14.0)
+      vel = new PVector(random(-1.0, 1.0), random(-1.0, 1.0));
+      size = random(6.0, 14.0);
       rotation = random(TWO_PI);
       rotVel = random(-0.15, 0.15);
     } else {
