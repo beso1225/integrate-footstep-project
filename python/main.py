@@ -31,7 +31,7 @@ FEATURE_KEYS = [
 ]
 
 MODEL_FEATURE_KEYS = [key for key in FEATURE_KEYS if key != "heading_change"]
-EMOTION_NAMES = {0: "Sad", 1: "Neutral", 2: "Positive", 3: "Angry"}
+EMOTION_NAMES = {0: "Sad", 1: "Neutral", 2: "Happy", 3: "Angry"}
 
 def step_handler(address, *args):
     if len(args) != len(FEATURE_KEYS):
@@ -47,16 +47,16 @@ def step_handler(address, *args):
     
     sad_prob = float(probabilities[0])
     neutral_prob = float(probabilities[1])
-    positive_prob = float(probabilities[2])
+    happy_prob = float(probabilities[2])
     angry_prob = float(probabilities[3])
     
-    print(f"[推論結果] {emotion_label:8} | Sad: {sad_prob:.2f}, Neu: {neutral_prob:.2f}, Pos: {positive_prob:.2f}, Ang: {angry_prob:.2f}")
+    print(f"[推論結果] {emotion_label:8} | Sad: {sad_prob:.2f}, Neu: {neutral_prob:.2f}, Pos: {happy_prob:.2f}, Ang: {angry_prob:.2f}")
 
     processing_client.send_message("/walking/prediction", prediction)
     processing_client.send_message("/walking/sad_prob", sad_prob)
     processing_client.send_message("/walking/neutral_prob", neutral_prob)
-    processing_client.send_message("/walking/positive_prob", positive_prob) # 旧happy_probから変更
-    processing_client.send_message("/walking/angry_prob", angry_prob)       # 新規追加
+    processing_client.send_message("/walking/happy_prob", happy_prob)
+    processing_client.send_message("/walking/angry_prob", angry_prob)
 
     processing_client.send_message("/walking/heading_change", float(full_features['heading_change'].iloc[0]))
     processing_client.send_message("/walking/step_length", float(full_features['step_length'].iloc[0]))

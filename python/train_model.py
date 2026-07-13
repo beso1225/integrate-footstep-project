@@ -9,20 +9,20 @@ def main():
     try:
         sad_df = pd.read_csv('sad_raw.csv')
         neutral_df = pd.read_csv('neutral_raw.csv')
-        positive_df = pd.read_csv('positive_raw.csv')
+        happy_df = pd.read_csv('happy_raw.csv')
         angry_df = pd.read_csv('angry_raw.csv')
     except FileNotFoundError as e:
         print(f"Error: ファイルが見つかりません。パスを確認してください。: {e}")
         return
 
-    # 2. ラベルの付与 (Sad=0, Neutral=1, Positive=2, Angry=3)
+    # 2. ラベルの付与 (Sad=0, Neutral=1, happy=2, Angry=3)
     sad_df['label'] = 0
     neutral_df['label'] = 1
-    positive_df['label'] = 2
+    happy_df['label'] = 2
     angry_df['label'] = 3
 
     # 3. データの結合と前処理
-    df = pd.concat([sad_df, neutral_df, positive_df, angry_df], ignore_index=True)
+    df = pd.concat([sad_df, neutral_df, happy_df, angry_df], ignore_index=True)
     
     # 歩き始めの不安定なデータ（最初の5歩）を削除
     df = df[df['step_num'] > 5]
@@ -34,7 +34,7 @@ def main():
     y = df['label']
 
     print(f"学習データ総数: {len(df)} ステップ")
-    print(f"構成 -> Sad: {len(sad_df)}, Neutral: {len(neutral_df)}, Positive: {len(positive_df)}, Angry: {len(angry_df)}")
+    print(f"構成 -> Sad: {len(sad_df)}, Neutral: {len(neutral_df)}, Happy: {len(happy_df)}, Angry: {len(angry_df)}")
     print(f"使用する特徴量一覧 ({len(X.columns)}個): {list(X.columns)}")
 
     # 4. 訓練データとテストデータに分割 (8:2)
@@ -52,7 +52,7 @@ def main():
     # 6. 評価 (4クラスのレポート)
     y_pred = model.predict(X_test)
     print("\n--- 分類パフォーマンス評価 (※参考値) ---")
-    print(classification_report(y_test, y_pred, target_names=['Sad', 'Neutral', 'Positive', 'Angry']))
+    print(classification_report(y_test, y_pred, target_names=['Sad', 'Neutral', 'Happy', 'Angry']))
 
     # 7. 特徴量の重要度（Feature Importance）の出力
     print("\n--- 特徴量重要度 (貢献度が高い順) ---")
