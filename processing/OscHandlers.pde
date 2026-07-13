@@ -49,6 +49,8 @@ void oscEvent(OscMessage msg) {
 
         if (pred == 0) latestOutdoorEmotion = "sad";
         else if (pred == 1) latestOutdoorEmotion = "neutral";
+        else if (pred == 2) latestOutdoorEmotion = "happy";
+        else if (pred == 3) latestOutdoorEmotion = "angry";
         else latestOutdoorEmotion = "happy";
       }
       else if (msg.checkAddrPattern("/walking/heading_change")) {
