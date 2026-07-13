@@ -7,7 +7,7 @@ import main
 class FakeModel:
     def predict_proba(self, features):
         self.columns = list(features.columns)
-        return [[0.1, 0.2, 0.7]]
+        return [[0.1, 0.2, 0.6, 0.1]]
 
     def predict(self, features):
         self.columns = list(features.columns)
@@ -26,7 +26,7 @@ class StepHandlerTest(unittest.TestCase):
     def test_forwards_outdoor_step_to_processing(self):
         model = FakeModel()
         client = FakeClient()
-        values = [float(index) for index in range(15)]
+        values = [float(index) for index in range(10)]
 
         with (
             patch.object(main, "model", model),
@@ -38,21 +38,22 @@ class StepHandlerTest(unittest.TestCase):
         self.assertIn(("/walking/prediction", 2), client.messages)
         self.assertIn(("/walking/sad_prob", 0.1), client.messages)
         self.assertIn(("/walking/neutral_prob", 0.2), client.messages)
-        self.assertIn(("/walking/happy_prob", 0.7), client.messages)
-        self.assertIn(("/walking/heading_change", 13.0), client.messages)
-        self.assertIn(("/walking/step_length", 14.0), client.messages)
+        self.assertIn(("/walking/happy_prob", 0.6), client.messages)
+        self.assertIn(("/walking/angry_prob", 0.1), client.messages)
+        self.assertIn(("/walking/heading_change", 8.0), client.messages)
+        self.assertIn(("/walking/step_length", 9.0), client.messages)
         self.assertEqual(client.messages[-1], ("/walking/peak_g", 0.0))
         self.assertNotIn("/step", [address for address, _ in client.messages])
 
     def test_model_input_excludes_only_heading_change(self):
-        self.assertEqual(len(main.FEATURE_KEYS), 15)
-        self.assertEqual(len(main.MODEL_FEATURE_KEYS), 14)
+        self.assertEqual(len(main.FEATURE_KEYS), 10)
+        self.assertEqual(len(main.MODEL_FEATURE_KEYS), 9)
         self.assertNotIn("heading_change", main.MODEL_FEATURE_KEYS)
         self.assertIn("step_length", main.MODEL_FEATURE_KEYS)
-        self.assertEqual(main.EMOTION_NAMES, {0: "sad", 1: "neutral", 2: "happy"})
+        self.assertEqual(main.EMOTION_NAMES, {0: "Sad", 1: "Neutral", 2: "Happy", 3: "Angry"})
 
     def test_loaded_model_matches_outdoor_contract(self):
-        self.assertEqual(list(main.model.classes_), [0, 1, 2])
+        self.assertEqual(list(main.model.classes_), [0, 1, 2, 3])
         self.assertEqual(list(main.model.feature_names_in_), main.MODEL_FEATURE_KEYS)
 
     def test_rejects_incomplete_feature_payload(self):

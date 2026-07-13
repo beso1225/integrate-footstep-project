@@ -32,7 +32,7 @@ class ProcessingContractTest(unittest.TestCase):
         return float(match.group(1))
 
     def test_sketch_uses_available_assets(self):
-        for movie in ("happy", "sad", "neutral"):
+        for movie in ("happy", "sad", "neutral", "angry"):
             relative_path = f"movie/{movie}.mp4"
             self.assertIn(f'new Movie(this, "{relative_path}")', self.sketch)
             self.assertTrue((SKETCH_DIR / "data" / relative_path).is_file())
@@ -151,7 +151,7 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertIn('return "happy";', self.sketch)
         self.assertIn("normalizeEmotion(String emotion)", self.sketch)
         self.assertIn("emotion.toLowerCase()", self.sketch)
-        self.assertIn('if (normalizedEmotion.equals("angry")) return "sad";', self.sketch)
+        self.assertIn('if (normalizedEmotion.equals("angry")) return "angry";', self.sketch)
         self.assertIn("return rightFoot ? magnitude : -magnitude;", self.sketch)
         self.assertIn("randomTurnForFoot(isRightFoot)", self.sketch)
         self.assertNotIn(

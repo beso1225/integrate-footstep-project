@@ -55,8 +55,20 @@ class TrackerProjectionTest(unittest.TestCase):
             inverse_matrix, TRACKING_AREA_WIDTH_CM, TRACKING_AREA_HEIGHT_CM
         )
 
-        np.testing.assert_allclose(top_left, np.array([0.0, 0.0]), atol=1e-4)
-        np.testing.assert_allclose(bottom_right, np.array([300.0, 300.0]), atol=1e-4)
+        center_column = GRID_COLUMNS // 2
+        center_row = GRID_ROWS // 2
+        expected_top_left = np.array(
+            [100.0 - 100.0 * center_column, 100.0 - 100.0 * center_row]
+        )
+        expected_bottom_right = np.array(
+            [
+                100.0 + 100.0 * (GRID_COLUMNS - center_column),
+                100.0 + 100.0 * (GRID_ROWS - center_row),
+            ]
+        )
+
+        np.testing.assert_allclose(top_left, expected_top_left, atol=1e-4)
+        np.testing.assert_allclose(bottom_right, expected_bottom_right, atol=1e-4)
 
 
 if __name__ == "__main__":
