@@ -67,6 +67,10 @@ def extract_egait_features(landmarks):
     return np.array(features)
 
 
+def get_cached_indoor_emotion(track_id):
+    return current_emotions.get(track_id, "happy")
+
+
 def predict_indoor_emotion(frame, box_bounds, track_id):
     if (
         emotion_model is None
@@ -85,7 +89,7 @@ def predict_indoor_emotion(frame, box_bounds, track_id):
     crop_img = frame[y1:y2, x1:x2]
 
     if crop_img.shape[0] == 0 or crop_img.shape[1] == 0:
-        return current_emotions.get(track_id, "happy")
+        return get_cached_indoor_emotion(track_id)
 
     crop_rgb = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
     mp_image = mediapipe_image_class(
@@ -95,7 +99,7 @@ def predict_indoor_emotion(frame, box_bounds, track_id):
     pose_results = pose.detect(mp_image)
 
     if not pose_results.pose_world_landmarks:
-        return current_emotions.get(track_id, "happy")
+        return get_cached_indoor_emotion(track_id)
 
     features = extract_egait_features(pose_results.pose_world_landmarks[0])
     sequence_buffers.setdefault(track_id, []).append(features)
@@ -114,4 +118,4 @@ def predict_indoor_emotion(frame, box_bounds, track_id):
         emotion_index = int(np.argmax(prediction[0]))
         current_emotions[track_id] = INDOOR_EMOTIONS[emotion_index]
 
-    return current_emotions.get(track_id, "happy")
+    return get_cached_indoor_emotion(track_id)

@@ -18,6 +18,9 @@ CAMERA_INDEX = 0
 ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION", "1") != "0"
 INDOOR_EMOTIONS = ["angry", "happy", "neutral", "sad"]
 MAX_EMOTION_FRAMES = 150
+INDOOR_EMOTION_INTERVAL_FRAMES = max(
+    1, int(os.getenv("INDOOR_EMOTION_INTERVAL_FRAMES", "1"))
+)
 
 WINDOW_NAME = "Room Tracking System"
 WINDOW_POSITION = (100, 100)

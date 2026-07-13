@@ -10,6 +10,7 @@ from .config import (
     CAMERA_INDEX,
     GRID_CONFIG_PATH,
     GRID_DEFINITION,
+    INDOOR_EMOTION_INTERVAL_FRAMES,
     PROCESSING_HOST,
     PROCESSING_PORT,
     PTS_SRC,
@@ -18,7 +19,11 @@ from .config import (
     WINDOW_SIZE,
     YOLO_MODEL_PATH,
 )
-from .emotion import predict_indoor_emotion, setup_indoor_emotion
+from .emotion import (
+    get_cached_indoor_emotion,
+    predict_indoor_emotion,
+    setup_indoor_emotion,
+)
 from .grid import load_calibration_points, load_grid_definition, save_grid_definition
 
 
@@ -217,7 +222,29 @@ def draw_grid_status(frame, grid_definition):
         )
 
 
-def process_box(frame, box, matrix, client, indoor_emotion_enabled, grid_definition):
+def should_run_indoor_emotion_inference(
+    track_id, frame_index, interval_frames, last_inference_frames
+):
+    if interval_frames <= 1:
+        return True
+
+    last_frame_index = last_inference_frames.get(track_id)
+    if last_frame_index is None:
+        return True
+
+    return frame_index - last_frame_index >= interval_frames
+
+
+def process_box(
+    frame,
+    box,
+    matrix,
+    client,
+    indoor_emotion_enabled,
+    grid_definition,
+    frame_index,
+    last_emotion_inference_frames,
+):
     if box.id is None:
         return
 
@@ -232,7 +259,18 @@ def process_box(frame, box, matrix, client, indoor_emotion_enabled, grid_definit
     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
     cv2.circle(frame, (foot_x, foot_y), 6, (0, 0, 255), -1)
 
-    emotion = predict_indoor_emotion(frame, box_bounds, track_id)
+    emotion = "happy"
+    if indoor_emotion_enabled:
+        if should_run_indoor_emotion_inference(
+            track_id,
+            frame_index,
+            INDOOR_EMOTION_INTERVAL_FRAMES,
+            last_emotion_inference_frames,
+        ):
+            emotion = predict_indoor_emotion(frame, box_bounds, track_id)
+            last_emotion_inference_frames[track_id] = frame_index
+        else:
+            emotion = get_cached_indoor_emotion(track_id)
 
     text = f"ID:{track_id} X={int(real_x)}, Y={int(real_y)}"
     if indoor_emotion_enabled:
@@ -288,6 +326,8 @@ def run():
     calibration_points = load_calibration_points(GRID_CONFIG_PATH)
     calibration_state = create_calibration_state(grid_definition, calibration_points)
     configure_window(calibration_state)
+    frame_index = 0
+    last_emotion_inference_frames = {}
 
     print("システムを開始します。")
 
@@ -306,9 +346,19 @@ def run():
         draw_grid_status(frame, grid_definition)
 
         for box in results[0].boxes:
-            process_box(frame, box, matrix, client, indoor_emotion_enabled, grid_definition)
+            process_box(
+                frame,
+                box,
+                matrix,
+                client,
+                indoor_emotion_enabled,
+                grid_definition,
+                frame_index,
+                last_emotion_inference_frames,
+            )
 
         cv2.imshow(WINDOW_NAME, frame)
+        frame_index += 1
 
         key_code = cv2.waitKey(1) & 0xFF
         if key_code == ord("q"):
