@@ -18,9 +18,9 @@ void drawFootprints() {
       continue;
     }
 
-    Movie currentMovie = getMovieForEmotion(fp.emotion);
-    if (currentMovie.available() || currentMovie.width > 0) {
-      PImage frame = currentMovie.get();
+    PImage currentImg = getImageForEmotion(fp.emotion);
+    if (currentImg != null && currentImg.width > 0) {
+      PImage frame = currentImg.get();
       frame.resize(footWidth, footHeight);
       PImage maskImage = fp.isRight ? rightFootMask : leftFootMask;
       frame.mask(maskImage);

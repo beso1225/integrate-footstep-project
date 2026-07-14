@@ -1,9 +1,9 @@
-Movie getMovieForEmotion(String emotion) {
+PImage getImageForEmotion(String emotion) {
   String normalizedEmotion = normalizeEmotion(emotion);
-  if (normalizedEmotion.equals("sad")) return sadMovie;
-  if (normalizedEmotion.equals("neutral")) return neutralMovie;
-  if (normalizedEmotion.equals("angry")) return angryMovie;
-  return happyMovie;
+  if (normalizedEmotion.equals("sad")) return sadImage;
+  if (normalizedEmotion.equals("neutral")) return neutralImage;
+  if (normalizedEmotion.equals("angry")) return angryImage;
+  return happyImage;
 }
 
 String normalizeEmotion(String emotion) {
