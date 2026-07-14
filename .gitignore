@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 
 to_integrate/
+python/tmp/
 
 python/walking_data/
 python/training/*.h5

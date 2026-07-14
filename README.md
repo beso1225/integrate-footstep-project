@@ -80,6 +80,23 @@ cd python
 ENABLE_INDOOR_EMOTION=0 uv run python tracker.py
 ```
 
+感情推定ログをファイルへ保存する場合は、`INDOOR_EMOTION_LOG_DIR` に保存先ディレクトリを指定します。Python 側で `indoor-emotion-YYYYMMDD-HHMMSS.log` というファイル名を生成します。画面へのログ出力も従来どおり行われます。
+
+```sh
+cd python
+mkdir -p tmp/indoor-emotion
+INDOOR_EMOTION_LOG_DIR=tmp/indoor-emotion uv run python tracker.py
+```
+
+保存したログは、感情別件数と高確信度の `happy` 件数などを JSON で解析できます。
+
+```sh
+cd python
+uv run python tools/analyze_indoor_emotion_log.py tmp/indoor-emotion/indoor-emotion-YYYYMMDD-HHMMSS.log \
+  --threshold 0.98 \
+  --output tmp/indoor-emotion-summary.json
+```
+
 ## モデル再学習
 
 屋外モードのモデルを再学習する場合は次を実行します。
@@ -87,6 +104,13 @@ ENABLE_INDOOR_EMOTION=0 uv run python tracker.py
 ```sh
 cd python
 uv run python train_model.py
+```
+
+屋内感情モデルの学習データは、150 フレーム幅・30 フレーム stride の sliding window に分割して学習します。stride を変更する場合は次の環境変数を指定します。
+
+```sh
+cd python/training
+INDOOR_EMOTION_WINDOW_STRIDE=15 uv run python train.py
 ```
 
 学習データは `python/walking_data/` に `sad_raw.csv`、`neutral_raw.csv`、`happy_raw.csv` として配置してください。これらの生データ (raw data) は repo に含めません。出力モデルは `python/walking_emotion_rf.pkl` です。

@@ -1,3 +1,16 @@
+float wrapOutdoorCoordinate(float value, float minimum, float maximum) {
+  float span = maximum - minimum;
+  if (span <= 0) return value;
+
+  while (value < minimum) {
+    value += span;
+  }
+  while (value > maximum) {
+    value -= span;
+  }
+  return value;
+}
+
 void stepOutdoor(
   String receivedEmotion,
   float inputStepLengthMeters,
@@ -21,17 +34,12 @@ void stepOutdoor(
   float nextX = currentX + cos(currentAngle) * actualStepPixels;
   float nextY = currentY + sin(currentAngle) * actualStepPixels;
 
-  if (nextX < 0) {
-    nextX += width;
-  } else if (nextX > width) {
-    nextX -= width;
-  }
-
-  if (nextY < 0) {
-    nextY += height;
-  } else if (nextY > height) {
-    nextY -= height;
-  }
+  float gridMinX = indoorOriginX();
+  float gridMinY = indoorOriginY();
+  float gridMaxX = gridMinX + cmToPixels(INDOOR_TRACKING_WIDTH_CM);
+  float gridMaxY = gridMinY + cmToPixels(INDOOR_TRACKING_HEIGHT_CM);
+  nextX = wrapOutdoorCoordinate(nextX, gridMinX, gridMaxX);
+  nextY = wrapOutdoorCoordinate(nextY, gridMinY, gridMaxY);
 
   currentX = nextX;
   currentY = nextY;
