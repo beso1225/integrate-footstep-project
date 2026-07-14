@@ -8,7 +8,7 @@ from .grid import load_grid_definition
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 YOLO_MODEL_PATH = BASE_DIR / "yolov8n.pt"
-INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "2egait_lstm_model.h5"
+INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "egait_lstm_model_0714_1.h5"
 POSE_LANDMARKER_MODEL_PATH = BASE_DIR / "pose_landmarker_full.task"
 
 PROCESSING_HOST = "localhost"
@@ -16,10 +16,13 @@ PROCESSING_PORT = 12000
 CAMERA_INDEX = 0
 
 ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION", "1") != "0"
-INDOOR_EMOTIONS = ["angry", "happy", "neutral", "sad"]
+INDOOR_EMOTIONS = ["happy", "sad", "angry", "neutral"]
 MAX_EMOTION_FRAMES = 150
 INDOOR_EMOTION_INTERVAL_FRAMES = max(
     1, int(os.getenv("INDOOR_EMOTION_INTERVAL_FRAMES", "1"))
+)
+INDOOR_EMOTION_LOG_INTERVAL_SECONDS = max(
+    1.0, float(os.getenv("INDOOR_EMOTION_LOG_INTERVAL_SECONDS", "3"))
 )
 
 WINDOW_NAME = "Room Tracking System"

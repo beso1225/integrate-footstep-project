@@ -1,10 +1,12 @@
 import os
+import time
 
 import cv2
 import numpy as np
 
 from .config import (
     ENABLE_INDOOR_EMOTION,
+    INDOOR_EMOTION_LOG_INTERVAL_SECONDS,
     INDOOR_EMOTION_MODEL_PATH,
     INDOOR_EMOTIONS,
     MAX_EMOTION_FRAMES,
@@ -19,6 +21,7 @@ mediapipe_image_class = None
 mediapipe_image_format = None
 sequence_buffers = {}
 current_emotions = {}
+last_emotion_log_times = {}
 
 
 def setup_indoor_emotion():
@@ -107,6 +110,46 @@ def get_cached_indoor_emotion(track_id):
     return current_emotions.get(track_id, "happy")
 
 
+def should_log_indoor_emotion_prediction(
+    track_id, now_seconds, interval_seconds, last_log_times
+):
+    last_log_time = last_log_times.get(track_id)
+    if last_log_time is None:
+        return True
+
+    return now_seconds - last_log_time >= interval_seconds
+
+
+def format_indoor_emotion_prediction_log(
+    track_id, emotion_index, emotion, prediction
+):
+    prediction_values = np.asarray(prediction, dtype=float).ravel()
+    formatted_prediction = ", ".join(
+        f"{value:.4f}" for value in prediction_values
+    )
+    return (
+        f"屋内感情推定: track_id={track_id} "
+        f"emotion_index={emotion_index} emotion={emotion} "
+        f"prediction=[{formatted_prediction}]"
+    )
+
+
+def log_indoor_emotion_prediction(track_id, emotion_index, emotion, prediction):
+    now_seconds = time.monotonic()
+    if not should_log_indoor_emotion_prediction(
+        track_id,
+        now_seconds,
+        INDOOR_EMOTION_LOG_INTERVAL_SECONDS,
+        last_emotion_log_times,
+    ):
+        return
+
+    print(format_indoor_emotion_prediction_log(
+        track_id, emotion_index, emotion, prediction
+    ))
+    last_emotion_log_times[track_id] = now_seconds
+
+
 def predict_indoor_emotion(frame, box_bounds, track_id):
     if (
         emotion_model is None
@@ -149,9 +192,14 @@ def predict_indoor_emotion(frame, box_bounds, track_id):
             dtype="float32",
             padding="post",
             truncating="post",
+            value=-999.0
         )
         prediction = emotion_model.predict(input_data, verbose=0)
         emotion_index = int(np.argmax(prediction[0]))
-        current_emotions[track_id] = INDOOR_EMOTIONS[emotion_index]
+        emotion = INDOOR_EMOTIONS[emotion_index]
+        current_emotions[track_id] = emotion
+        log_indoor_emotion_prediction(
+            track_id, emotion_index, emotion, prediction[0]
+        )
 
     return get_cached_indoor_emotion(track_id)
