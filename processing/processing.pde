@@ -1,6 +1,5 @@
 import oscP5.*;
 import netP5.*;
-import processing.video.*;
 import java.util.HashMap;
 import java.util.ArrayList;
 
@@ -21,14 +20,10 @@ void setup() {
   footHeight = round(cmToPixels(FOOT_LENGTH_CM));
   footWidth = round(footHeight * FOOT_WIDTH_TO_LENGTH_RATIO);
 
-  happyMovie = new Movie(this, "movie/happy.mp4");
-  happyMovie.loop();
-  sadMovie = new Movie(this, "movie/sad.mp4");
-  sadMovie.loop();
-  neutralMovie = new Movie(this, "movie/neutral.mp4");
-  neutralMovie.loop();
-  angryMovie = new Movie(this, "movie/angry.mp4");
-  angryMovie.loop();
+  happyImage = loadImage("img/happy.png");
+  sadImage = loadImage("img/sad.png");
+  neutralImage = loadImage("img/neutral.png");
+  angryImage = loadImage("img/angry.png");
 
   PImage fullImage = loadImage("img/footprint.png");
   leftFootMask = fullImage.get(0, 0, fullImage.width / 2, fullImage.height);
@@ -44,10 +39,6 @@ void setup() {
   currentAngle = random(TWO_PI);
 
   imageMode(CENTER);
-}
-
-void movieEvent(Movie m) {
-  m.read();
 }
 
 void draw() {
