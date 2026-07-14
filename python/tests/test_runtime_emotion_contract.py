@@ -12,6 +12,7 @@ class RuntimeEmotionContractTest(unittest.TestCase):
 
         self.assertIn('INDOOR_EMOTION_INTERVAL_FRAMES = max(', config_module)
         self.assertIn('"INDOOR_EMOTION_INTERVAL_FRAMES"', config_module)
+        self.assertIn("INDOOR_EMOTION_LOG_INTERVAL_SECONDS", config_module)
         self.assertIn("should_run_indoor_emotion_inference(", runtime_module)
         self.assertIn("last_emotion_inference_frames", runtime_module)
 
