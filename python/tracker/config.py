@@ -8,7 +8,7 @@ from .grid import load_grid_definition
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 YOLO_MODEL_PATH = BASE_DIR / "yolov8n.pt"
-INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "egait_lstm_model_0714_1.h5"
+INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "egait_lstm_model_0714_2.h5"
 POSE_LANDMARKER_MODEL_PATH = BASE_DIR / "pose_landmarker_full.task"
 
 PROCESSING_HOST = "localhost"

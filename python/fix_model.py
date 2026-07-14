@@ -4,7 +4,7 @@ import traceback
 
 print("=== ターミナルから直接作成した最新版です ===")
 try:
-    with h5py.File('egait_lstm_model_0714_1.h5', 'r+') as f:
+    with h5py.File('egait_lstm_model_0714_2.h5', 'r+') as f:
         c = f.attrs.get('model_config')
         if c is not None:
             # decode機能があるか安全にチェック
