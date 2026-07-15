@@ -102,9 +102,13 @@ class ProcessingContractTest(unittest.TestCase):
         self.assertNotIn("applyIndoorHomography", self.sketch)
         self.assertNotIn("solveIndoorLinearSystem", self.sketch)
 
-    def test_processing_does_not_apply_projector_warp_to_positions(self):
-        self.assertIn("float screenX = currentX;", self.sketch)
-        self.assertIn("float screenY = currentY;", self.sketch)
+    def test_outdoor_steps_are_wrapped_inside_indoor_grid(self):
+        self.assertIn("float gridMinX = indoorOriginX();", self.sketch)
+        self.assertIn("float gridMinY = indoorOriginY();", self.sketch)
+        self.assertIn("float gridMaxX = gridMinX + cmToPixels(INDOOR_TRACKING_WIDTH_CM);", self.sketch)
+        self.assertIn("float gridMaxY = gridMinY + cmToPixels(INDOOR_TRACKING_HEIGHT_CM);", self.sketch)
+        self.assertIn("nextX = wrapOutdoorCoordinate(nextX, gridMinX, gridMaxX);", self.sketch)
+        self.assertIn("nextY = wrapOutdoorCoordinate(nextY, gridMinY, gridMaxY);", self.sketch)
         self.assertNotIn("lerp(lerp(p[0].x, p[1].x, normX)", self.sketch)
 
     def test_footprints_fade_by_elapsed_time_instead_of_fixed_count(self):

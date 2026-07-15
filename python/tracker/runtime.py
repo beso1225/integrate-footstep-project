@@ -8,6 +8,7 @@ from ultralytics import YOLO
 from .calibration import CalibrationState
 from .config import (
     CAMERA_INDEX,
+    DEFAULT_INDOOR_EMOTION,
     GRID_CONFIG_PATH,
     GRID_DEFINITION,
     INDOOR_EMOTION_INTERVAL_FRAMES,
@@ -259,7 +260,7 @@ def process_box(
     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
     cv2.circle(frame, (foot_x, foot_y), 6, (0, 0, 255), -1)
 
-    emotion = "happy"
+    emotion = DEFAULT_INDOOR_EMOTION
     if indoor_emotion_enabled:
         if should_run_indoor_emotion_inference(
             track_id,

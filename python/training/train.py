@@ -17,6 +17,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # ========================================== 
 EMOTIONS = ['Happy', 'Sad', 'Angry', 'Neutral'] # ラベルの順序を変更して、モデルの出力と一致させる 
 MAX_FRAMES = 150 # 歩行データの最大フレーム数（パディング用） 
+WINDOW_STRIDE = max(1, int(os.getenv('INDOOR_EMOTION_WINDOW_STRIDE', '30')))
 NUM_FEATURES = 48 # 16関節 × 3座標(x,y,z) 
 MODEL_PATH = 'egait_lstm_model.h5' 
 MASK_VALUE = -999.0 # 0.0は正常な座標なのでパディングには使わない 
@@ -70,6 +71,22 @@ def compute_class_weight(y):
         class_weight[class_index] = total_count / (len(EMOTIONS) * count)
     return class_weight
 
+
+def create_sliding_windows(sequence, window_size=MAX_FRAMES, stride=WINDOW_STRIDE):
+    """長い系列を固定長の重複 window に分割する。"""
+    if stride <= 0:
+        raise ValueError("stride は1以上である必要があります。")
+
+    sequence_length = sequence.shape[0]
+    if sequence_length <= window_size:
+        return [sequence]
+
+    starts = list(range(0, sequence_length - window_size + 1, stride))
+    final_start = sequence_length - window_size
+    if starts[-1] != final_start:
+        starts.append(final_start)
+    return [sequence[start:start + window_size] for start in starts]
+
 # ========================================== 
 # 1. データ読み込みと前処理 
 # ========================================== 
@@ -113,8 +130,10 @@ def load_data():
                     print("変換後 Spine座標:", feat_data[0, 3:6]) # Spineは相対的な値になるはず
                     print("------------------------\n")
                 
-                X_list.append(feat_data) 
-                y_list.append(np.array(f_lab[key])) 
+                label = np.array(f_lab[key])
+                for window in create_sliding_windows(feat_data):
+                    X_list.append(window)
+                    y_list.append(label)
 
     if len(X_list) == 0: 
         raise ValueError("読み込めるデータがありませんでした。features.h5 あるいは ELMD データセットを配置してください。") 

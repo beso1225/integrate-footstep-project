@@ -8,7 +8,7 @@ from .grid import load_grid_definition
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 YOLO_MODEL_PATH = BASE_DIR / "yolov8n.pt"
-INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "egait_lstm_model_0714_2.h5"
+INDOOR_EMOTION_MODEL_PATH = BASE_DIR / "egait_lstm_model_0714_3.h5"
 POSE_LANDMARKER_MODEL_PATH = BASE_DIR / "pose_landmarker_full.task"
 
 PROCESSING_HOST = "localhost"
@@ -17,6 +17,7 @@ CAMERA_INDEX = 0
 
 ENABLE_INDOOR_EMOTION = os.getenv("ENABLE_INDOOR_EMOTION", "1") != "0"
 INDOOR_EMOTIONS = ["happy", "sad", "angry", "neutral"]
+DEFAULT_INDOOR_EMOTION = "neutral"
 MAX_EMOTION_FRAMES = 150
 INDOOR_EMOTION_INTERVAL_FRAMES = max(
     1, int(os.getenv("INDOOR_EMOTION_INTERVAL_FRAMES", "1"))
