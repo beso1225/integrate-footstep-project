@@ -8,6 +8,7 @@
 - `python/main.py`: 屋外モード用です。iPhone アプリから OSC を受け取り、感情推定して Processing に転送します。
 - `python/tracker.py`: 屋内モード用です。カメラ映像から人の足元座標を推定して Processing に送ります。
 - `python/train_model.py`: 屋外モードの Random Forest モデルを再学習するスクリプトです。
+- `ios/`: iPhone のセンサーデータから歩行中の着地を検出し、OSC で 歩行特徴量をPython 側に送信する iOS アプリです。
 - `python/walking_data/`: 屋外モデルの学習用 CSV を配置するディレクトリです（repo には含めません）。
 
 ## 通信ポート
